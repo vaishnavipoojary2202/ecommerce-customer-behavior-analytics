@@ -1,0 +1,36 @@
+# Data files
+data/*.csv
+data/*.csv.gz
+data/*.zip
+*.csv
+*.csv.gz
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Generated outputs
+outputs/figures/*
+outputs/tables/*
+
+# Temporary files
+*.tmp
+*.log
