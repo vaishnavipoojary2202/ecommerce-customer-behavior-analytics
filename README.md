@@ -1,59 +1,35 @@
 # E-Commerce Customer Behavior Analytics
 
-Big Data Analytics project using **PySpark** for e-commerce customer behavior analysis, enhanced RFM feature engineering, and **K-Means customer segmentation**.
+> **Big Data Analytics Mini Project**  
+> Large-scale e-commerce behavior analysis using **Apache Spark / PySpark**, enhanced RFM-based customer segmentation, and an interactive dashboard.
 
-## Project Overview
+## Overview
 
-This project analyzes large-scale e-commerce behavior data to understand how customers interact with products and to identify meaningful customer segments.
+This project analyzes e-commerce event data to understand customer purchasing behavior, product performance, and sales patterns. Customer-level behavioral features are used to build an enhanced RFM representation and segment customers using **K-Means clustering**.
 
-### Planned pipeline
+The project is designed as a reproducible PySpark pipeline rather than a single monolithic notebook.
+
+## Project Pipeline
 
 ```text
 Raw E-Commerce Events
         ↓
-PySpark Ingestion
+01 — Data Exploration
         ↓
-Data Cleaning & Transformation
+02 — Data Cleaning
         ↓
-Customer / Product / Sales Analytics
+03 — Customer Analytics
         ↓
-Purchase Data
+04 — Enhanced RFM
         ↓
-RFM & Enhanced Customer Features
+05 — Customer Segmentation
         ↓
-Feature Scaling
-        ↓
-K-Means Clustering
-        ↓
-Elbow + Silhouette Evaluation
-        ↓
-PCA Visualization
-        ↓
-Customer Segmentation
+06 — Product & Sales Analysis
         ↓
 Streamlit Dashboard
 ```
 
-## Technology Stack
-
-- Python
-- Apache Spark / PySpark
-- Spark MLlib
-- Pandas
-- Plotly / Matplotlib
-- Streamlit
-- Git & GitHub
-
-## Dataset
-
-The project uses the **E-Commerce Behavior Data from a Multi-Category Store** dataset from Kaggle.
-
-The raw dataset is very large, so raw CSV files are **not stored in this repository**.
-
-Dataset source:  
-https://www.kaggle.com/datasets/mkechinov/ecommerce-behavior-data-from-multi-category-store
-
-## Project Structure
+## Repository Structure
 
 ```text
 ecommerce-customer-behavior-analytics/
@@ -62,10 +38,16 @@ ecommerce-customer-behavior-analytics/
 │   └── README.md
 │
 ├── notebooks/
-│   └── 01_data_exploration.ipynb
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_data_cleaning.ipynb
+│   ├── 03_customer_analytics.ipynb
+│   ├── 04_enhanced_rfm.ipynb
+│   ├── 05_customer_segmentation.ipynb
+│   └── 06_product_sales_analysis.ipynb
 │
-├── src/
 ├── dashboard/
+│   └── app.py
+│
 ├── outputs/
 │   ├── figures/
 │   └── tables/
@@ -75,11 +57,57 @@ ecommerce-customer-behavior-analytics/
 └── README.md
 ```
 
+## Notebook Responsibilities
+
+| Notebook | Purpose |
+|---|---|
+| `01_data_exploration` | Understand the raw dataset, schema, events, users, sessions, missing values and basic statistics |
+| `02_data_cleaning` | Clean, validate and prepare reusable event/purchase data |
+| `03_customer_analytics` | Build customer-level behavioral summaries |
+| `04_enhanced_rfm` | Create RFM + enhanced customer features and prepare them for clustering |
+| `05_customer_segmentation` | Evaluate K values and perform K-Means customer segmentation |
+| `06_product_sales_analysis` | Analyze products, categories, brands and sales trends |
+
+## Dataset
+
+**E-Commerce Behavior Data from a Multi-Category Store**
+
+The dataset contains event-level e-commerce interactions such as views, cart actions and purchases.
+
+Source: [Kaggle dataset](https://www.kaggle.com/datasets/mkechinov/ecommerce-behavior-data-from-multi-category-store)
+
+The raw CSV is intentionally **not stored in GitHub** because of its size. For the initial implementation, the working file is:
+
+`2019-Oct.csv`
+
+Place it locally at:
+
+```text
+data/2019-Oct.csv
+```
+
+## Technology Stack
+
+- **Python**
+- **Apache Spark / PySpark**
+- **Spark MLlib**
+- **Pandas / NumPy**
+- **Matplotlib / Plotly**
+- **Streamlit**
+- **Jupyter**
+- **Git & GitHub**
+
+## Reproducibility
+
+Large intermediate datasets should be stored locally as **Parquet** rather than repeatedly recomputing them from the raw CSV.
+
+Raw data and generated large files are excluded through `.gitignore`.
+
 ## Team
 
-**Vaishnavi Poojary**  
-**Smith**
+- **Vaishnavi Poojary**
+- **Smith**
 
-## Status
+## Project Status
 
-🚧 Project setup and dataset exploration in progress.
+🚧 **Project setup complete — implementation starting with Notebook 01.**
