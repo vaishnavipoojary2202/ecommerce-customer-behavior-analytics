@@ -34,3 +34,5 @@ outputs/tables/*
 # Temporary files
 *.tmp
 *.log
+
+data/*.parquet
