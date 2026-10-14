@@ -93,23 +93,54 @@ DOCUMENTED = {
     "unique_products": 42_241,
     "unique_categories": 567,
     "unique_brands": 1_985,
-    "total_purchase_value": 229_960_000.0,   # approx ₹229.96 million
+    "total_purchase_value": 229_960_000.0,  # approx ₹229.96 million
     "avg_purchase_value": 309.56,
 }
 
 # Cluster specification from notebook 05 (id, label, n, recency, freq, monetary, atv, events/session)
 CLUSTER_SPEC = [
-    (0, "Low-Activity, Low-Spend Customers",          99_824, 17.31, 1.20,    70.83,  61.94, 1.01),
-    (1, "Moderate-Frequency, High-Value Customers",    15_363, 15.72, 2.86, 1_018.87, 340.98, 1.87),
-    (2, "Infrequent, High-ATV Customers",             123_777, 18.59, 1.32,   546.10, 423.91, 1.00),
-    (3, "Recently Active, Low-Frequency Customers",    59_926,  3.86, 1.62,   422.33, 270.17, 1.01),
-    (4, "High-Frequency, High-Value Customers",        16_156,  8.23, 9.41, 3_501.22, 358.40, 1.29),
-    (5, "Frequent, High-Spend Customers",              32_072, 12.88, 5.16, 1_801.13, 331.63, 1.76),
+    (0, "Low-Activity, Low-Spend Customers", 99_824, 17.31, 1.20, 70.83, 61.94, 1.01),
+    (
+        1,
+        "Moderate-Frequency, High-Value Customers",
+        15_363,
+        15.72,
+        2.86,
+        1_018.87,
+        340.98,
+        1.87,
+    ),
+    (2, "Infrequent, High-ATV Customers", 123_777, 18.59, 1.32, 546.10, 423.91, 1.00),
+    (
+        3,
+        "Recently Active, Low-Frequency Customers",
+        59_926,
+        3.86,
+        1.62,
+        422.33,
+        270.17,
+        1.01,
+    ),
+    (
+        4,
+        "High-Frequency, High-Value Customers",
+        16_156,
+        8.23,
+        9.41,
+        3_501.22,
+        358.40,
+        1.29,
+    ),
+    (5, "Frequent, High-Spend Customers", 32_072, 12.88, 5.16, 1_801.13, 331.63, 1.76),
 ]
 CLUSTER_LABELS = {cid: label for cid, label, *_ in CLUSTER_SPEC}
 CLUSTER_COLORS = {
-    0: "#8c8c8c", 1: "#2ca02c", 2: "#1f77b4",
-    3: "#ff7f0e", 4: "#d62728", 5: "#9467bd",
+    0: "#8c8c8c",
+    1: "#2ca02c",
+    2: "#1f77b4",
+    3: "#ff7f0e",
+    4: "#d62728",
+    5: "#9467bd",
 }
 SPEND_BANDS = ["Low Spend", "Medium Spend", "High Spend", "Very High Spend"]
 
@@ -215,7 +246,11 @@ def _demo_from_value_dict(
                 "avg_value": value / events if events else 0.0,
             }
         )
-    return pd.DataFrame(records).sort_values("total_value", ascending=False).reset_index(drop=True)
+    return (
+        pd.DataFrame(records)
+        .sort_values("total_value", ascending=False)
+        .reset_index(drop=True)
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -232,7 +267,9 @@ def build_demo_top_products() -> pd.DataFrame:
         ("P1009", 3_540_000.0, 3_010, 1),
         ("P1010", 3_180_000.0, 2_870, 1),
     ]
-    return _demo_from_value_dict("product_id", rows, DOCUMENTED["total_purchase_events"])
+    return _demo_from_value_dict(
+        "product_id", rows, DOCUMENTED["total_purchase_events"]
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -252,7 +289,9 @@ def build_demo_categories() -> pd.DataFrame:
         ("electronics.video.projector", 4_300_000.0, 7_000, 30),
         ("unknown", 12_000_000.0, 90_000, 400),
     ]
-    return _demo_from_value_dict("category_code", rows, DOCUMENTED["total_purchase_events"])
+    return _demo_from_value_dict(
+        "category_code", rows, DOCUMENTED["total_purchase_events"]
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -300,11 +339,24 @@ def build_demo_daily_sales() -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def build_demo_day_of_week() -> pd.DataFrame:
-    order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    order = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
     # Documented: Wednesday 119,201 (max) and Saturday 96,012 (min).
     events = {
-        "Monday": 106_500, "Tuesday": 111_200, "Wednesday": 119_201,
-        "Thursday": 109_400, "Friday": 103_800, "Saturday": 96_012, "Sunday": 96_736,
+        "Monday": 106_500,
+        "Tuesday": 111_200,
+        "Wednesday": 119_201,
+        "Thursday": 109_400,
+        "Friday": 103_800,
+        "Saturday": 96_012,
+        "Sunday": 96_736,
     }
     df = pd.DataFrame(
         {"day_of_week": order, "purchase_events": [events[d] for d in order]}
@@ -316,12 +368,29 @@ def build_demo_day_of_week() -> pd.DataFrame:
 # ============================================================================
 # Resolved data (real if available, else demo) + data-source status
 # ============================================================================
+
+
 def resolve_customers() -> tuple[pd.DataFrame, bool]:
     real = try_load_clustered_customers()
+
     if real is None:
         real = try_load_customer_analytics()
+
     if real is not None and "cluster" in real.columns:
+        rename_map = {
+            "frequency": "purchase_events",
+            "monetary": "total_spend",
+            "average_transaction_value": "avg_txn_value",
+            "avg_purchase_events_per_session": "events_per_session",
+            "spend_segment": "spend_band",
+        }
+
+        for old_name, new_name in rename_map.items():
+            if old_name in real.columns and new_name not in real.columns:
+                real = real.rename(columns={old_name: new_name})
+
         return real, True
+
     return build_demo_customers(), False
 
 
@@ -408,11 +477,12 @@ if not customers_is_real:
         icon="🧪",
     )
 
+
 # ============================================================================
 # Shared helpers for sections
 # ============================================================================
 def kpi_row(df: pd.DataFrame) -> None:
-    total_customers = int(len(df))
+    total_customers = len(df)
     purchases = int(round(df["purchase_events"].sum()))
     revenue = float(df["total_spend"].sum())
     aov = revenue / purchases if purchases else 0.0
@@ -427,7 +497,10 @@ def kpi_row(df: pd.DataFrame) -> None:
 
 
 def cluster_palette(df: pd.DataFrame) -> dict:
-    return {cid: CLUSTER_COLORS.get(int(cid), "#888") for cid in sorted(df["cluster"].unique())}
+    return {
+        cid: CLUSTER_COLORS.get(int(cid), "#888")
+        for cid in sorted(df["cluster"].unique())
+    }
 
 
 def add_cluster_labels(series: pd.Series) -> pd.Series:
@@ -479,8 +552,10 @@ if page == PAGES[0]:
         )
         fig.update_traces(texttemplate="%{text:,}", textposition="outside")
         fig.update_layout(
-            showlegend=False, margin=dict(l=10, r=10, t=10, b=10),
-            xaxis_title="Customers", yaxis_title="",
+            showlegend=False,
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis_title="Customers",
+            yaxis_title="",
             height=360,
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -496,7 +571,8 @@ if page == PAGES[0]:
         labels={"total_spend": "Total spend (₹)", "color": "Cluster"},
     )
     fig.update_layout(
-        height=380, margin=dict(l=10, r=10, t=10, b=10),
+        height=380,
+        margin=dict(l=10, r=10, t=10, b=10),
         xaxis_title="Total spend (₹) — log count axis",
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -522,8 +598,11 @@ elif page == PAGES[1]:
 
     with tab_rec:
         fig = px.histogram(
-            cdf, x="recency_days", color=add_cluster_labels(cdf["cluster"]),
-            nbins=50, labels={"recency_days": "Recency (days)", "color": "Cluster"},
+            cdf,
+            x="recency_days",
+            color=add_cluster_labels(cdf["cluster"]),
+            nbins=50,
+            labels={"recency_days": "Recency (days)", "color": "Cluster"},
         )
         fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig, use_container_width=True)
@@ -531,17 +610,26 @@ elif page == PAGES[1]:
 
     with tab_freq:
         fig = px.histogram(
-            cdf, x="purchase_events", color=add_cluster_labels(cdf["cluster"]),
-            nbins=40, log_y=True,
-            labels={"purchase_events": "Purchase events (frequency)", "color": "Cluster"},
+            cdf,
+            x="purchase_events",
+            color=add_cluster_labels(cdf["cluster"]),
+            nbins=40,
+            log_y=True,
+            labels={
+                "purchase_events": "Purchase events (frequency)",
+                "color": "Cluster",
+            },
         )
         fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig, use_container_width=True)
 
     with tab_mon:
         fig = px.histogram(
-            cdf, x="total_spend", color=add_cluster_labels(cdf["cluster"]),
-            nbins=60, log_y=True,
+            cdf,
+            x="total_spend",
+            color=add_cluster_labels(cdf["cluster"]),
+            nbins=60,
+            log_y=True,
             labels={"total_spend": "Monetary — total spend (₹)", "color": "Cluster"},
         )
         fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
@@ -551,8 +639,12 @@ elif page == PAGES[1]:
         share = cdf.groupby("cluster").size().reset_index(name="customers")
         share["cluster_label"] = share["cluster"].map(CLUSTER_LABELS)
         fig = px.pie(
-            share, names="cluster_label", values="customers", hole=0.45,
-            color="cluster", color_discrete_map=cluster_palette(cdf),
+            share,
+            names="cluster_label",
+            values="customers",
+            hole=0.45,
+            color="cluster",
+            color_discrete_map=cluster_palette(cdf),
         )
         fig.update_traces(textinfo="percent+label")
         fig.update_layout(height=460, margin=dict(l=10, r=10, t=10, b=10))
@@ -596,8 +688,16 @@ elif page == PAGES[2]:
     profile["profile"] = profile["cluster"].map(CLUSTER_LABELS)
 
     display = profile[
-        ["cluster", "share_pct", "avg_recency", "avg_frequency",
-         "avg_monetary", "avg_atv", "avg_events_per_session", "profile"]
+        [
+            "cluster",
+            "share_pct",
+            "avg_recency",
+            "avg_frequency",
+            "avg_monetary",
+            "avg_atv",
+            "avg_events_per_session",
+            "profile",
+        ]
     ].rename(
         columns={
             "cluster": "Cluster",
@@ -631,7 +731,13 @@ elif page == PAGES[2]:
 
     with col_table:
         st.subheader("Normalised feature comparison")
-        metrics = ["avg_recency", "avg_frequency", "avg_monetary", "avg_atv", "avg_events_per_session"]
+        metrics = [
+            "avg_recency",
+            "avg_frequency",
+            "avg_monetary",
+            "avg_atv",
+            "avg_events_per_session",
+        ]
         norm = profile.copy()
         for m in metrics:
             lo, hi = norm[m].min(), norm[m].max()
@@ -650,14 +756,18 @@ elif page == PAGES[2]:
             )
         fig.update_layout(
             polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
-            showlegend=True, height=460, margin=dict(l=20, r=20, t=30, b=20),
+            showlegend=True,
+            height=460,
+            margin=dict(l=20, r=20, t=30, b=20),
         )
         st.plotly_chart(fig, use_container_width=True)
 
     with col_radar:
         st.subheader("PCA projection")
         if _file_exists(PCA_FIGURE_PATH):
-            st.image(str(PCA_FIGURE_PATH), caption="customer_segments_pca.png (notebook 05)")
+            st.image(
+                str(PCA_FIGURE_PATH), caption="customer_segments_pca.png (notebook 05)"
+            )
         else:
             # Fallback synthetic 2-D projection of the clusters.
             rng = np.random.default_rng(11)
@@ -666,14 +776,25 @@ elif page == PAGES[2]:
                 n = min(int(row["customers"]), 4000)
                 x = rng.normal(row["avg_monetary"] / 500, 1.2, n)
                 y = rng.normal(row["avg_frequency"], 0.6, n)
-                pts.append(pd.DataFrame({"x": x, "y": y, "cluster": int(row["cluster"])}))
+                pts.append(
+                    pd.DataFrame({"x": x, "y": y, "cluster": int(row["cluster"])})
+                )
             proj = pd.concat(pts, ignore_index=True)
             proj["cluster_label"] = proj["cluster"].map(lambda c: f"Cluster {c}")
             fig = px.scatter(
-                proj, x="x", y="y", color="cluster_label",
-                color_discrete_map={f"Cluster {k}": v for k, v in CLUSTER_COLORS.items()},
+                proj,
+                x="x",
+                y="y",
+                color="cluster_label",
+                color_discrete_map={
+                    f"Cluster {k}": v for k, v in CLUSTER_COLORS.items()
+                },
                 opacity=0.5,
-                labels={"x": "PCA component 1", "y": "PCA component 2", "cluster_label": "Cluster"},
+                labels={
+                    "x": "PCA component 1",
+                    "y": "PCA component 2",
+                    "cluster_label": "Cluster",
+                },
             )
             fig.update_layout(height=460, margin=dict(l=10, r=10, t=30, b=10))
             st.plotly_chart(fig, use_container_width=True)
@@ -686,8 +807,10 @@ elif page == PAGES[2]:
     st.subheader("Cluster size")
     fig = px.bar(
         profile,
-        x="cluster", y="customers",
-        color="profile", text="customers",
+        x="cluster",
+        y="customers",
+        color="profile",
+        text="customers",
         labels={"cluster": "Cluster", "customers": "Customers", "profile": "Profile"},
     )
     fig.update_traces(texttemplate="%{text:,}", textposition="outside")
@@ -703,7 +826,9 @@ elif page == PAGES[3]:
     st.caption("Top products and categories by purchase value (notebook 06).")
 
     products, products_real = resolve_table(TOP_PRODUCTS_PATH, build_demo_top_products)
-    categories, categories_real = resolve_table(CATEGORY_PERFORMANCE_PATH, build_demo_categories)
+    categories, categories_real = resolve_table(
+        CATEGORY_PERFORMANCE_PATH, build_demo_categories
+    )
 
     col1, col2 = st.columns(2)
     with col1:
@@ -716,7 +841,9 @@ elif page == PAGES[3]:
     prod = products.head(top_n).copy()
     fig = px.bar(
         prod.sort_values("total_value"),
-        x="total_value", y="product_id", orientation="h",
+        x="total_value",
+        y="product_id",
+        orientation="h",
         text="total_value",
         labels={"total_value": "Purchase value (₹)", "product_id": "Product"},
     )
@@ -730,7 +857,9 @@ elif page == PAGES[3]:
     cat = categories.head(cat_n).copy()
     fig = px.bar(
         cat.sort_values("total_value"),
-        x="total_value", y="category_code", orientation="h",
+        x="total_value",
+        y="category_code",
+        orientation="h",
         text="total_value",
         labels={"total_value": "Purchase value (₹)", "category_code": "Category"},
     )
@@ -740,7 +869,16 @@ elif page == PAGES[3]:
 
     st.subheader("Category detail")
     st.dataframe(
-        cat[["category_code", "purchase_events", "unique_products", "unique_customers", "total_value", "avg_value"]],
+        cat[
+            [
+                "category_code",
+                "purchase_events",
+                "unique_products",
+                "unique_customers",
+                "total_value",
+                "avg_value",
+            ]
+        ],
         use_container_width=True,
         hide_index=True,
     )
@@ -764,8 +902,12 @@ elif page == PAGES[4]:
     top = brands.head(brand_n).copy()
     fig = px.bar(
         top.sort_values("total_value"),
-        x="total_value", y="brand", orientation="h",
-        text="total_value", color="total_value", color_continuous_scale="Blues",
+        x="total_value",
+        y="brand",
+        orientation="h",
+        text="total_value",
+        color="total_value",
+        color_continuous_scale="Blues",
         labels={"total_value": "Purchase value (₹)", "brand": "Brand"},
     )
     fig.update_traces(texttemplate="₹%{text:,.0f}", textposition="outside")
@@ -776,11 +918,22 @@ elif page == PAGES[4]:
 
     st.subheader("Brand detail")
     st.dataframe(
-        top[["brand", "purchase_events", "unique_products", "unique_customers", "total_value", "avg_value"]],
+        top[
+            [
+                "brand",
+                "purchase_events",
+                "unique_products",
+                "unique_customers",
+                "total_value",
+                "avg_value",
+            ]
+        ],
         use_container_width=True,
         hide_index=True,
     )
-    st.caption("Apple and Samsung accounted for substantial purchase value (notebook 06).")
+    st.caption(
+        "Apple and Samsung accounted for substantial purchase value (notebook 06)."
+    )
 
 
 # ============================================================================
@@ -788,7 +941,9 @@ elif page == PAGES[4]:
 # ============================================================================
 elif page == PAGES[5]:
     st.title("📈 Sales Trends")
-    st.caption("Daily and day-of-week purchase activity across October 2019 (notebook 06).")
+    st.caption(
+        "Daily and day-of-week purchase activity across October 2019 (notebook 06)."
+    )
 
     daily, daily_real = resolve_table(DAILY_SALES_PATH, build_demo_daily_sales)
     dow, dow_real = resolve_table(DOW_SALES_PATH, build_demo_day_of_week)
@@ -817,13 +972,29 @@ elif page == PAGES[5]:
     c1.metric("Days shown", f"{len(d):,}")
     c2.metric("Total", inr(total) if metric == "Purchase value" else f"{int(total):,}")
     if peak_row is not None:
-        peak_val = inr(peak_row["total_value"]) if metric == "Purchase value" else f"{int(peak_row['purchase_events']):,}"
-        c3.metric("Peak day", peak_row["date"].strftime("%d %b %Y"), delta=peak_val, delta_color="off")
+        peak_val = (
+            inr(peak_row["total_value"])
+            if metric == "Purchase value"
+            else f"{int(peak_row['purchase_events']):,}"
+        )
+        c3.metric(
+            "Peak day",
+            peak_row["date"].strftime("%d %b %Y"),
+            delta=peak_val,
+            delta_color="off",
+        )
 
     st.divider()
     fig = px.line(
-        d, x="date", y=y_col, markers=True,
-        labels={"date": "Date", "total_value": "Purchase value (₹)", "purchase_events": "Purchase events"},
+        d,
+        x="date",
+        y=y_col,
+        markers=True,
+        labels={
+            "date": "Date",
+            "total_value": "Purchase value (₹)",
+            "purchase_events": "Purchase events",
+        },
     )
     fig.update_traces(line=dict(width=3))
     fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
@@ -831,23 +1002,45 @@ elif page == PAGES[5]:
 
     st.divider()
     st.subheader("Day-of-week pattern")
-    dow_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    dow_order = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
     dow = dow.copy()
-    dow["day_of_week"] = pd.Categorical(dow["day_of_week"], categories=dow_order, ordered=True)
+    dow["day_of_week"] = pd.Categorical(
+        dow["day_of_week"], categories=dow_order, ordered=True
+    )
     dow = dow.sort_values("day_of_week")
-    metric_dow = st.radio("Day-of-week metric", ["Purchase events", "Purchase value"], horizontal=True)
+    metric_dow = st.radio(
+        "Day-of-week metric", ["Purchase events", "Purchase value"], horizontal=True
+    )
     ydow = "purchase_events" if metric_dow == "Purchase events" else "total_value"
     fig = px.bar(
-        dow, x="day_of_week", y=ydow, text=ydow,
-        color=ydow, color_continuous_scale="Teal",
-        labels={"day_of_week": "", "purchase_events": "Purchase events", "total_value": "Purchase value (₹)"},
+        dow,
+        x="day_of_week",
+        y=ydow,
+        text=ydow,
+        color=ydow,
+        color_continuous_scale="Teal",
+        labels={
+            "day_of_week": "",
+            "purchase_events": "Purchase events",
+            "total_value": "Purchase value (₹)",
+        },
     )
-    fig.update_traces(
-        texttemplate="%{text:,.0f}", textposition="outside"
+    fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
+    fig.update_layout(
+        height=400, coloraxis_showscale=False, margin=dict(l=10, r=10, t=10, b=10)
     )
-    fig.update_layout(height=400, coloraxis_showscale=False, margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig, use_container_width=True)
-    st.caption("Wednesday recorded the most purchase events; Saturday the fewest (notebook 06).")
+    st.caption(
+        "Wednesday recorded the most purchase events; Saturday the fewest (notebook 06)."
+    )
 
 
 # ============================================================================
@@ -856,8 +1049,7 @@ elif page == PAGES[5]:
 elif page == PAGES[6]:
     st.title("📝 Methodology & Data Notes")
 
-    st.markdown(
-        """
+    st.markdown("""
 ### Pipeline
 Raw e-commerce events are processed by a reproducible PySpark notebook pipeline:
 
@@ -894,8 +1086,7 @@ Final cleaned dataset: **42,380,089 records** (≈99.84% of the raw data).
 - There is **no country/location** attribute, so country analysis is omitted.
 - Only **October 2019** is covered.
 - Cluster IDs are algorithm-generated and do not imply business value on their own.
-        """
-    )
+        """)
 
     st.divider()
     st.subheader("Reproducing the outputs")
